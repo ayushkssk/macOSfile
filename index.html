@@ -257,8 +257,8 @@
             </div>
         </div>
 
-        <!-- macOS style search bar in top right -->
-        <div class="relative w-64">
+        <!-- macOS style search bar moved to left side -->
+        <div class="relative w-64 ml-20">
             <div class="relative flex items-center">
                 <!-- Search Icon -->
                 <div class="absolute left-2 text-gray-400">
@@ -290,11 +290,11 @@
                 </button>
             </div>
 
-            <!-- Search Suggestions Dropdown -->
+            <!-- Search Suggestions Dropdown (adjusted to left align) -->
             <div 
                 x-show="searchTerm && suggestions.length"
                 @click.away="suggestions = []"
-                class="absolute right-0 w-72 mt-1 bg-gray-800/95 backdrop-blur-sm border border-gray-700/50 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto"
+                class="absolute left-0 w-72 mt-1 bg-gray-800/95 backdrop-blur-sm border border-gray-700/50 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto"
             >
                 <template x-for="(suggestion, index) in suggestions" :key="index">
                     <div 
@@ -352,8 +352,63 @@
         </div>
     </div>
 
-    <!-- Grid View -->
-    <div class="relative h-[calc(100vh-8rem)] overflow-hidden">
+    <!-- Add this section at the top of your body content -->
+    <div x-show="currentPath.length === 0" class="min-h-screen bg-gray-900">
+        <!-- Hero Section -->
+        <div class="text-center py-20">
+            <h1 class="text-4xl font-bold text-white mb-4">Welcome to Website Directory</h1>
+            <p class="text-gray-400 text-lg mb-8">Your personal collection of development resources</p>
+            
+            <!-- Quick Stats -->
+            <div class="flex justify-center space-x-8 mb-12">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-blue-400" x-text="Object.keys(fileSystem).length"></div>
+                    <div class="text-gray-400">Categories</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-blue-400">100+</div>
+                    <div class="text-gray-400">Resources</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Categories Grid -->
+        <div class="max-w-7xl mx-auto px-4">
+            <h2 class="text-2xl font-semibold text-white mb-6">Main Categories</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <template x-for="(category, name) in fileSystem" :key="name">
+                    <div 
+                        @click="openItem({name: name, type: 'folder'})"
+                        class="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 cursor-pointer hover:bg-gray-700/50 transition-all group"
+                    >
+                        <div class="flex items-center space-x-4">
+                            <!-- Folder Icon -->
+                            <div class="p-3 bg-blue-500/20 rounded-lg group-hover:bg-blue-500/30 transition-all">
+                                <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                        d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-medium text-white mb-1" x-text="name"></h3>
+                                <p class="text-sm text-gray-400" x-text="`${category.items} items`"></p>
+                            </div>
+                            <!-- Arrow Icon -->
+                            <div class="ml-auto text-gray-400 group-hover:translate-x-1 transition-transform">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Existing Grid View (show only when not on home page) -->
+    <div x-show="currentPath.length > 0" class="relative h-[calc(100vh-8rem)] overflow-hidden">
         <div 
             x-data="{ 
                 scrollPosition: 0,
