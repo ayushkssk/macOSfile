@@ -220,7 +220,11 @@
         <!-- Breadcrumb Navigation -->
         <div class="fixed top-20 left-20 right-6 z-20 flex items-center space-x-2 px-4 py-2 bg-gray-900/50 backdrop-blur-sm rounded-lg shadow-lg">
             <!-- Home Icon -->
-            <a href="#" class="p-2 rounded-lg hover:bg-gray-800/50 text-gray-400 hover:text-white transition-all">
+            <a 
+                @click.prevent="currentPath = []; breadcrumb = ['Home'];" 
+                href="#" 
+                class="p-2 rounded-lg hover:bg-gray-800/50 text-gray-400 hover:text-white transition-all"
+            >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
@@ -408,36 +412,10 @@
     </div>
 
     <!-- Existing Grid View (show only when not on home page) -->
-    <div x-show="currentPath.length > 0" class="relative h-[calc(100vh-8rem)] overflow-hidden">
-        <div 
-            x-data="{ 
-                scrollPosition: 0,
-                scrollSpeed: 1.5,
-                isScrolling: false,
-                autoScrollInterval: null
-            }"
-            x-init="$watch('scrollPosition', value => {
-                const maxScroll = $el.scrollHeight / 3;
-                if (value >= maxScroll) {
-                    scrollPosition = 0;
-                } else if (value < 0) {
-                    scrollPosition = maxScroll - 1;
-                }
-            })"
-            @wheel.prevent="handleScroll($event)"
-            class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 transition-transform duration-500 ease-out"
-            :class="{ 'scroll-smooth': isScrolling }"
-            :style="`transform: translateY(-${scrollPosition}px)`"
-        >
-            <!-- Original Items -->
-            <template x-for="(item, index) in [...currentFolderContent, ...currentFolderContent, ...currentFolderContent]" :key="`${item.name}-${index}`">
-                <div 
-                    class="flex flex-col items-center opacity-100 transition-opacity duration-300"
-                    :class="{
-                        'opacity-50': isScrolling,
-                        'hover:opacity-100': isScrolling
-                    }"
-                >
+    <div x-show="currentPath.length > 0" class="relative h-[calc(100vh-12rem)] overflow-y-auto custom-scrollbar mt-16">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 p-4">
+            <template x-for="item in currentFolderContent" :key="item.name">
+                <div class="flex flex-col items-center">
                     <div 
                         @click="openItem(item)"
                         class="w-24 h-24 rounded-xl flex items-center justify-center hover:bg-blue-500/30 transition cursor-pointer"
@@ -468,34 +446,6 @@
                 </div>
             </template>
         </div>
-
-        <!-- Scroll Progress Indicator -->
-        <div class="fixed right-0 top-1/2 -translate-y-1/2 h-32 w-1 bg-gray-800/50 rounded-full mr-2">
-            <div
-                class="w-full bg-blue-500/50 rounded-full transition-all duration-300"
-                :style="`height: ${(scrollPosition / ($el.parentElement.scrollHeight / 3)) * 100}%; transform: translateY(${(scrollPosition / ($el.parentElement.scrollHeight / 3)) * 100}%)`"
-            ></div>
-        </div>
-    </div>
-
-    <!-- Add this at the top of your body, after the search bar -->
-    <div class="fixed right-4 top-1/2 transform -translate-y-1/2 flex flex-col gap-2 z-50">
-        <button 
-            @click="smoothScroll('up')"
-            class="p-2 rounded-full bg-gray-800/80 backdrop-blur-sm text-gray-400 hover:text-white hover:bg-gray-700/80 transition-all"
-        >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-            </svg>
-        </button>
-        <button 
-            @click="smoothScroll('down')"
-            class="p-2 rounded-full bg-gray-800/80 backdrop-blur-sm text-gray-400 hover:text-white hover:bg-gray-700/80 transition-all"
-        >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
-        </button>
     </div>
 
     <!-- Sticky Drawer Toggle Button -->
@@ -1134,58 +1084,6 @@ function folderSystem() {
                 return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
             } catch {
                 return null;
-            }
-        },
-
-        handleScroll(event) {
-            const delta = event.deltaY * this.scrollSpeed;
-            this.isScrolling = true;
-            
-            // Smooth scroll animation
-            const startPosition = this.scrollPosition;
-            const targetPosition = this.scrollPosition + delta;
-            const startTime = performance.now();
-            const duration = 500; // ms
-
-            const animate = (currentTime) => {
-                const elapsed = currentTime - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                
-                // Easing function for smooth animation
-                const easeProgress = 1 - Math.pow(1 - progress, 4);
-                
-                this.scrollPosition = startPosition + (delta * easeProgress);
-
-                if (progress < 1) {
-                    requestAnimationFrame(animate);
-                } else {
-                    setTimeout(() => {
-                        this.isScrolling = false;
-                    }, 150);
-                }
-            };
-
-            requestAnimationFrame(animate);
-        },
-
-        smoothScroll(direction) {
-            const delta = direction === 'up' ? -300 : 300;
-            this.handleScroll({ deltaY: delta / this.scrollSpeed });
-        },
-
-        // Auto-scroll functionality
-        startAutoScroll() {
-            if (!this.autoScrollInterval) {
-                this.autoScrollInterval = setInterval(() => {
-                    this.handleScroll({ deltaY: 2 });
-                }, 50);
-            }
-        },
-
-        stopAutoScroll() {
-            if (this.autoScrollInterval) {
-                clearInterval(this.autoScrollInterval);
-                this.autoScrollInterval = null;
             }
         },
 
