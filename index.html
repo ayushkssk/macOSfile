@@ -445,8 +445,8 @@
     </div>
 
     <!-- Add this right after the search bar div, before the grid view -->
-    <div class="fixed top-20 right-6 z-20 flex items-center space-x-4">
-        <!-- Filter Dropdown -->
+    <!-- <div class="fixed top-20 right-6 z-20 flex items-center space-x-4">
+        Filter Dropdown
         <div class="relative">
             <button 
                 @click="showFilterMenu = !showFilterMenu"
@@ -487,7 +487,7 @@
                     </template>
                 </div>
             </div>
-        </div>
+        </div> -->
     </div>
 
     <!-- Preview Modal -->
@@ -581,9 +581,10 @@
                         </span>
                     </div>
                     
+                    <!-- Item Container -->
                     <div 
                         @click="openItem(item)"
-                        class="w-24 h-24 rounded-xl flex items-center justify-center hover:bg-blue-500/30 transition cursor-pointer"
+                        class="w-24 h-24 rounded-xl flex items-center justify-center hover:bg-blue-500/30 transition cursor-pointer relative group"
                         :class="item.type === 'folder' ? 'bg-blue-500/20' : 'bg-gray-500/20'"
                     >
                         <!-- Folder Icon -->
@@ -593,7 +594,7 @@
                             </svg>
                         </template>
                         
-                        <!-- Website Favicon -->
+                        <!-- Website Icon and Visit Button -->
                         <template x-if="item.type === 'website'">
                             <div class="relative w-12 h-12 flex items-center justify-center">
                                 <img 
@@ -601,9 +602,23 @@
                                     class="w-8 h-8 object-contain rounded"
                                     @error="$el.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIiBkPSJNMjEgMTJhOSA5IDAgMDEtOSA5bTktOWE5IDkgMCAwMC05LTltOSA5SDNtOSA5YTkgOSAwIDAxLTktOW05IDljMS42NTcgMCAzLTQuMDMgMy05cy0xLjM0My05LTMtOW0wIDE4Yy0xLjY1NyAwLTMtNC4wMy0zLTlzMS4zNDMtOSAzLTltLTkgOWE5IDkgMCAwMTktOSIvPjwvc3ZnPg=='"
                                 >
+                                <!-- Visit Button (appears on hover) -->
+                                <a 
+                                    :href="item.url"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    @click.stop
+                                    class="absolute inset-0 flex items-center justify-center bg-black/50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                </a>
                             </div>
                         </template>
                     </div>
+                    
+                    <!-- Item Name and Details -->
                     <div class="mt-2 text-center">
                         <p class="text-white font-medium" x-text="item.name"></p>
                         <p class="text-blue-400 text-sm" x-show="item.type === 'folder'" x-text="`${item.items} items`"></p>
@@ -2404,31 +2419,7 @@ function folderSystem() {
             return combined.slice(0, 5);
         },
 
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
         getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
             const newestItems = this.getNewestItemsWithParentFolders();
             const newestFolders = this.getNewestFoldersWithParentFolders();
             const newestFiles = this.getNewestFilesWithParentFolders();
@@ -2453,18 +2444,6 @@ function folderSystem() {
         },
 
         getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
             const newestItems = this.getNewestItemsWithParentFolders();
             const newestFolders = this.getNewestFoldersWithParentFolders();
             const newestFiles = this.getNewestFilesWithParentFolders();
@@ -2512,7 +2491,7 @@ function folderSystem() {
             return combined.slice(0, 5);
         },
 
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
             const newestItems = this.getNewestItemsWithParentFolders();
             const newestFolders = this.getNewestFoldersWithParentFolders();
             const newestFiles = this.getNewestFilesWithParentFolders();
