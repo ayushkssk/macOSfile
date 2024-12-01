@@ -2476,6 +2476,18 @@ function folderSystem() {
             return combined.slice(0, 5);
         },
 
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
         getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
             const newestItems = this.getNewestItemsWithParentFolders();
             const newestFolders = this.getNewestFoldersWithParentFolders();
@@ -2513,18 +2525,6 @@ function folderSystem() {
         },
 
         getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
             const newestItems = this.getNewestItemsWithParentFolders();
             const newestFolders = this.getNewestFoldersWithParentFolders();
             const newestFiles = this.getNewestFilesWithParentFolders();
