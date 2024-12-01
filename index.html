@@ -79,7 +79,7 @@
         }
 
         .custom-scrollbar::-webkit-scrollbar {
-            height: 4px;
+            width: 4px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-track {
@@ -261,41 +261,110 @@
     <!-- Top Navigation Bar -->
     <div class="flex justify-between items-center mb-6">
         <!-- Breadcrumb Navigation -->
-        <div class="fixed top-20 left-20 right-6 z-20 flex items-center space-x-2 px-4 py-2 bg-gray-900/50 backdrop-blur-sm rounded-lg shadow-lg">
+        <div class="fixed top-20 left-20 right-6 z-20 flex items-center space-x-4 px-4 py-2 bg-gray-900/50 backdrop-blur-sm rounded-lg shadow-lg">
             <!-- Home Icon -->
             <a 
-                @click.prevent="navigateToRoot()" 
+                @click.prevent="navigateToRoot()"
                 href="#" 
                 class="p-2 rounded-lg hover:bg-gray-800/50 text-gray-400 hover:text-white transition-all"
+                :class="{'text-white': currentPath.length === 0}"
             >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
             </a>
 
-            <!-- Directory Path -->
+            <!-- Directory Path with Parent Folder Preview -->
             <div class="flex items-center space-x-2 overflow-x-auto custom-scrollbar">
                 <template x-for="(segment, index) in currentPath" :key="index">
-                    <div class="flex items-center shrink-0">
+                    <div class="flex items-center">
                         <!-- Separator -->
-                        <svg class="w-5 h-5 text-gray-600 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 text-gray-600 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                         </svg>
                         
                         <!-- Directory Button -->
                         <button 
                             @click="navigateTo(index)"
-                            class="px-3 py-1.5 rounded-lg hover:bg-gray-800/50 text-gray-400 hover:text-white transition-all text-sm font-medium whitespace-nowrap"
-                            :class="{'text-white bg-gray-800/50': index === currentPath.length - 1}"
+                            @mouseover="previewParentFolder(index)"
+                            @mouseleave="clearPreview()"
+                            class="px-3 py-1.5 rounded-lg hover:bg-gray-800/50 text-gray-400 hover:text-white transition-all text-sm font-medium relative group"
+                            :class="{'text-white': index === currentPath.length - 1}"
                         >
                             <span x-text="segment"></span>
-                            <!-- Optional: Show item count for current directory -->
-                            <template x-if="index === currentPath.length - 1">
-                                <span class="text-xs text-gray-500 ml-2" x-text="`(${currentItems.length})`"></span>
-                            </template>
+                            
+                            <!-- Preview Tooltip -->
+                            <div 
+                                x-show="previewIndex === index && index !== currentPath.length - 1"
+                                class="absolute left-0 top-full mt-2 bg-gray-800/95 backdrop-blur-sm rounded-lg shadow-lg p-2 z-50 w-48"
+                                @click.stop
+                            >
+                                <div class="text-xs text-gray-400 mb-1">Contents:</div>
+                                <div class="max-h-32 overflow-y-auto custom-scrollbar">
+                                    <template x-for="item in getPreviewContent(index)" :key="item.name">
+                                        <div class="flex items-center space-x-2 p-1 text-gray-300">
+                                            <template x-if="item.type === 'folder'">
+                                                <svg class="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                                                </svg>
+                                            </template>
+                                            <template x-if="item.type === 'website'">
+                                                <img :src="getFavicon(item.url)" class="w-3 h-3" />
+                                            </template>
+                                            <span class="text-xs" x-text="item.name"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
                         </button>
                     </div>
                 </template>
+            </div>
+
+            <!-- Repositioned and Resized Filter Dropdown -->
+            <div class="relative">
+                <button 
+                    @click="showFilterMenu = !showFilterMenu"
+                    class="flex items-center space-x-1.5 px-2.5 py-1 text-xs rounded-md bg-gray-800/80 text-gray-300 hover:text-white border border-gray-700/50 backdrop-blur-sm transition-all"
+                >
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    <span x-text="currentFilter.label"></span>
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+
+                <div 
+                    x-show="showFilterMenu"
+                    @click.away="showFilterMenu = false"
+                    class="absolute left-0 mt-1 w-40 bg-gray-800/95 backdrop-blur-sm border border-gray-700/50 rounded-lg shadow-lg z-50"
+                    x-transition:enter="transition ease-out duration-100"
+                    x-transition:enter-start="transform opacity-0 scale-95"
+                    x-transition:enter-end="transform opacity-100 scale-100"
+                >
+                    <div class="py-1">
+                        <template x-for="filter in filterOptions" :key="filter.value">
+                            <button 
+                                @click="setFilter(filter); showFilterMenu = false"
+                                class="w-full px-3 py-1.5 text-left text-xs hover:bg-gray-700/50 transition-colors flex items-center justify-between"
+                                :class="currentFilter.value === filter.value ? 'text-blue-400' : 'text-gray-300'"
+                            >
+                                <span x-text="filter.label"></span>
+                                <svg 
+                                    x-show="currentFilter.value === filter.value"
+                                    class="w-3 h-3" 
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </button>
+                        </template>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -371,6 +440,52 @@
                         </div>
                     </div>
                 </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add this right after the search bar div, before the grid view -->
+    <div class="fixed top-20 right-6 z-20 flex items-center space-x-4">
+        <!-- Filter Dropdown -->
+        <div class="relative">
+            <button 
+                @click="showFilterMenu = !showFilterMenu"
+                class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-800/80 text-gray-300 hover:text-white border border-gray-700/50 backdrop-blur-sm transition-all"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                <span x-text="currentFilter.label"></span>
+            </button>
+
+            <div 
+                x-show="showFilterMenu"
+                @click.away="showFilterMenu = false"
+                class="absolute right-0 mt-2 w-48 bg-gray-800/95 backdrop-blur-sm border border-gray-700/50 rounded-lg shadow-lg z-50"
+                x-transition:enter="transition ease-out duration-100"
+                x-transition:enter-start="transform opacity-0 scale-95"
+                x-transition:enter-end="transform opacity-100 scale-100"
+            >
+                <div class="py-1">
+                    <template x-for="filter in filterOptions" :key="filter.value">
+                        <button 
+                            @click="setFilter(filter); showFilterMenu = false"
+                            class="w-full px-4 py-2 text-left text-sm hover:bg-gray-700/50 transition-colors flex items-center justify-between"
+                            :class="currentFilter.value === filter.value ? 'text-blue-400' : 'text-gray-300'"
+                        >
+                            <span x-text="filter.label"></span>
+                            <svg 
+                                x-show="currentFilter.value === filter.value"
+                                class="w-4 h-4" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                            >
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        </button>
+                    </template>
+                </div>
             </div>
         </div>
     </div>
@@ -453,8 +568,19 @@
     <!-- Existing Grid View (show only when not on home page) -->
     <div x-show="currentPath.length > 0" class="relative h-[calc(100vh-12rem)] overflow-y-auto custom-scrollbar mt-16">
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 p-4">
-            <template x-for="item in currentFolderContent" :key="item.name">
-                <div class="flex flex-col items-center">
+            <template x-for="item in sortedItems" :key="item.name">
+                <div class="flex flex-col items-center relative">
+                    <!-- New Item Indicator -->
+                    <div 
+                        x-show="isNewItem(item)"
+                        class="absolute -top-1 -right-1 z-10"
+                    >
+                        <span class="flex h-3 w-3">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                        </span>
+                    </div>
+                    
                     <div 
                         @click="openItem(item)"
                         class="w-24 h-24 rounded-xl flex items-center justify-center hover:bg-blue-500/30 transition cursor-pointer"
@@ -467,7 +593,7 @@
                             </svg>
                         </template>
                         
-                        <!-- Website Icon -->
+                        <!-- Website Favicon -->
                         <template x-if="item.type === 'website'">
                             <div class="relative w-12 h-12 flex items-center justify-center">
                                 <img 
@@ -1397,14 +1523,26 @@ function folderSystem() {
             },
             'Github': {
                 type: 'folder',
-                items: 7,
+                items: 8, // Increased by 1 for new Portfoliyo folder
                 content: {
+                    'Portfoliyo': {
+                        type: 'folder',
+                        items: 1,
+                        content: {
+                            'CV 2024': { 
+                                type: 'website', 
+                                url: 'https://ayushkssk.github.io/newcv24/',
+                                description: 'Latest Portfolio Website',
+                            },
+                            'Portfoliyo': { type: 'website', url: 'https://ayushkssk.github.io/portfoliyo/' },
+                            'profile': { type: 'website', url: 'https://ayushkssk.github.io/Profile/' },
+                        }
+                    },
                     'Personal': {
                         type: 'folder',
                         items: 2,
                         content: {
-                            'Profile': { type: 'website', url: 'https://ayushkssk.github.io/Profile/' },
-                            'portfoliyo': { type: 'website', url: 'https://ayushkssk.github.io/portfoliyo/' }
+                            // 'Profile': { type: 'website', url: 'https://ayushkssk.github.io/Profile/' },
                         }
                     },
                     'Web Applications': {
@@ -1466,18 +1604,45 @@ function folderSystem() {
             for (let folder of this.currentPath) {
                 current = current[folder].content;
             }
-            return Object.entries(current).map(([name, data]) => ({
+            let items = Object.entries(current).map(([name, data]) => ({
                 name,
                 type: data.type,
                 url: data.url,
-                items: data.items
+                items: data.items,
+                timestamp: data.timestamp || Date.now() // Add default timestamp if not present
             }));
+
+            // Apply sorting based on current filter
+            switch (this.currentFilter.value) {
+                case 'az':
+                    items.sort((a, b) => a.name.localeCompare(b.name));
+                    break;
+                case 'za':
+                    items.sort((a, b) => b.name.localeCompare(a.name));
+                    break;
+                case 'newest':
+                    items.sort((a, b) => b.timestamp - a.timestamp);
+                    break;
+                case 'oldest':
+                    items.sort((a, b) => a.timestamp - b.timestamp);
+                    break;
+                default:
+                    // Default sorting: folders first, then files alphabetically
+                    items.sort((a, b) => {
+                        if (a.type === b.type) {
+                            return a.name.localeCompare(b.name);
+                        }
+                        return a.type === 'folder' ? -1 : 1;
+                    });
+            }
+
+            return items;
         },
 
         openItem(item) {
             if (item.type === 'folder') {
+                // Navigate into the folder by adding it to the current path
                 this.currentPath.push(item.name);
-                this.breadcrumb.push(item.name);
             } else if (item.type === 'website') {
                 this.activePreview = item;
                 this.previewOpen = true;
@@ -1603,7 +1768,8 @@ function folderSystem() {
                 const domain = new URL(url).hostname;
                 return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
             } catch {
-                return null;
+                // Fallback icon for invalid URLs
+                return 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIiBkPSJNMjEgMTJhOSA5IDAgMDEtOSA5bTktOWE5IDkgMCAwMC05LTltOSA5SDNtOSA5YTkgOSAwIDAxLTktOW05IDljMS42NTcgMCAzLTQuMDMgMy05cy0xLjM0My05LTMtOW0wIDE4Yy0xLjY1NyAwLTMtNC4wMy0zLTlzMS4zNDMtOSAzLTltLTkgOWE5IDkgMCAwMTktOSIvPjwvc3ZnPg==';
             }
         },
 
@@ -1714,7 +1880,8 @@ function folderSystem() {
             currentFolder[folderName] = {
                 type: 'folder',
                 content: {},
-                items: 0
+                items: 0,
+                timestamp: Date.now() // Add timestamp
             };
 
             // Update counts
@@ -1739,7 +1906,8 @@ function folderSystem() {
             // Add new website
             currentFolder[name] = {
                 type: 'website',
-                url: url.startsWith('http') ? url : `https://${url}`
+                url: url.startsWith('http') ? url : `https://${url}`,
+                timestamp: Date.now() // Add timestamp
             };
 
             // Update counts
@@ -1788,33 +1956,608 @@ function folderSystem() {
             this.urlError = '';
         },
 
-        validateName(value) {
-            this.nameError = '';
-            if (!value.trim()) {
-                this.nameError = 'Name is required';
-                return false;
-            }
-            if (value.length < 2) {
-                this.nameError = 'Name must be at least 2 characters';
-                return false;
-            }
-            if (value.length > 50) {
-                this.nameError = 'Name must be less than 50 characters';
-                return false;
-            }
-            if (!/^[a-zA-Z0-9-_ ]+$/.test(value)) {
-                this.nameError = 'Name can only contain letters, numbers, spaces, hyphens, and underscores';
-                return false;
+        previewIndex: null,
+
+        navigateToRoot() {
+            this.currentPath = [];
+            this.clearPreview();
+        },
+
+        navigateTo(index) {
+            this.currentPath = this.currentPath.slice(0, index + 1);
+            this.clearPreview();
+        },
+
+        previewParentFolder(index) {
+            this.previewIndex = index;
+        },
+
+        clearPreview() {
+            this.previewIndex = null;
+        },
+
+        getPreviewContent(index) {
+            let current = this.fileSystem;
+            // Navigate to the folder at the specified index
+            for (let i = 0; i <= index; i++) {
+                current = current[this.currentPath[i]]?.content;
+                if (!current) return [];
             }
             
-            // Check for duplicates
-            let currentFolder = this.getCurrentFolder();
-            if (currentFolder[value]) {
-                this.nameError = 'An item with this name already exists';
-                return false;
-            }
+            // Convert folder contents to array format
+            return Object.entries(current).map(([name, data]) => ({
+                name,
+                type: data.type,
+                url: data.url,
+                items: data.items
+            }));
+        },
+
+        currentFilter: {
+            label: 'Default',
+            value: 'default'
+        },
+
+        filterOptions: [
+            { label: 'Default', value: 'default' },
+            { label: 'Name (A to Z)', value: 'az' },
+            { label: 'Name (Z to A)', value: 'za' },
+            { label: 'Newest First', value: 'newest' },
+            { label: 'Oldest First', value: 'oldest' },
+            { label: 'Folders Only', value: 'folders' },
+            { label: 'Files Only', value: 'files' }
+        ],
+
+        isFilterOpen: false,
+
+        toggleFilter() {
+            this.isFilterOpen = !this.isFilterOpen;
+        },
+
+        selectFilter(filter) {
+            this.currentFilter = filter;
+            this.isFilterOpen = false;
+        },
+
+        getNewIndicator(item) {
+            const now = Date.now();
+            const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000;
+            const isNew = item.timestamp >= twentyFourHoursAgo;
             
-            return true;
+            if (item.type === 'folder') {
+                // Check if any child items are new
+                const childItems = Object.values(item.content || {});
+                const hasNewChild = childItems.some(child => this.getNewIndicator(child));
+                return hasNewChild;
+            } else if (item.type === 'website') {
+                return isNew;
+            }
+        },
+
+        getNewestItems() {
+            let items = [];
+            const now = Date.now();
+            const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000;
+            
+            const traverse = (structure, path = '') => {
+                Object.entries(structure).forEach(([name, data]) => {
+                    const currentPath = path ? `${path} / ${name}` : name;
+                    
+                    if (data.type === 'website' && data.timestamp >= twentyFourHoursAgo) {
+                        items.push({
+                            name,
+                            type: data.type,
+                            path: currentPath,
+                            data: data,
+                            url: data.url
+                        });
+                    } else if (data.type === 'folder' && data.content) {
+                        traverse(data.content, currentPath);
+                    }
+                });
+            };
+            
+            traverse(this.fileSystem);
+            
+            // Sort by timestamp and limit to 5 newest items
+            items.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            return items.slice(0, 5);
+        },
+
+        getNewestFolders() {
+            let folders = [];
+            const now = Date.now();
+            const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000;
+            
+            const traverse = (structure, path = '') => {
+                Object.entries(structure).forEach(([name, data]) => {
+                    const currentPath = path ? `${path} / ${name}` : name;
+                    
+                    if (data.type === 'folder' && data.timestamp >= twentyFourHoursAgo) {
+                        folders.push({
+                            name,
+                            type: data.type,
+                            path: currentPath,
+                            data: data
+                        });
+                    }
+                    
+                    if (data.type === 'folder' && data.content) {
+                        traverse(data.content, currentPath);
+                    }
+                });
+            };
+            
+            traverse(this.fileSystem);
+            
+            // Sort by timestamp and limit to 5 newest folders
+            folders.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            return folders.slice(0, 5);
+        },
+
+        getNewestFiles() {
+            let files = [];
+            const now = Date.now();
+            const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000;
+            
+            const traverse = (structure, path = '') => {
+                Object.entries(structure).forEach(([name, data]) => {
+                    const currentPath = path ? `${path} / ${name}` : name;
+                    
+                    if (data.type === 'website' && data.timestamp >= twentyFourHoursAgo) {
+                        files.push({
+                            name,
+                            type: data.type,
+                            path: currentPath,
+                            data: data,
+                            url: data.url
+                        });
+                    } else if (data.type === 'folder' && data.content) {
+                        traverse(data.content, currentPath);
+                    }
+                });
+            };
+            
+            traverse(this.fileSystem);
+            
+            // Sort by timestamp and limit to 5 newest files
+            files.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            return files.slice(0, 5);
+        },
+
+        getNewestItemsWithFolders() {
+            const newestFolders = this.getNewestFolders();
+            const newestFiles = this.getNewestFiles();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFolders() {
+            const newestItems = this.getNewestItems();
+            
+            // Add parent folders to the path
+            const itemsWithParentFolders = newestItems.map(item => {
+                const pathParts = item.path.split(' / ');
+                const parentFolders = pathParts.slice(0, -1);
+                const parentPath = parentFolders.join(' / ');
+                
+                return {
+                    ...item,
+                    parentPath
+                };
+            });
+            
+            return itemsWithParentFolders;
+        },
+
+        getNewestFoldersWithParentFolders() {
+            const newestFolders = this.getNewestFolders();
+            
+            // Add parent folders to the path
+            const foldersWithParentFolders = newestFolders.map(folder => {
+                const pathParts = folder.path.split(' / ');
+                const parentFolders = pathParts.slice(0, -1);
+                const parentPath = parentFolders.join(' / ');
+                
+                return {
+                    ...folder,
+                    parentPath
+                };
+            });
+            
+            return foldersWithParentFolders;
+        },
+
+        getNewestFilesWithParentFolders() {
+            const newestFiles = this.getNewestFiles();
+            
+            // Add parent folders to the path
+            const filesWithParentFolders = newestFiles.map(file => {
+                const pathParts = file.path.split(' / ');
+                const parentFolders = pathParts.slice(0, -1);
+                const parentPath = parentFolders.join(' / ');
+                
+                return {
+                    ...file,
+                    parentPath
+                };
+            });
+            
+            return filesWithParentFolders;
+        },
+
+        getNewestItemsWithParentFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFiles() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFiles() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFiles() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFiles() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
+        },
+
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+            const newestItems = this.getNewestItemsWithParentFolders();
+            const newestFolders = this.getNewestFoldersWithParentFolders();
+            const newestFiles = this.getNewestFilesWithParentFolders();
+            
+            // Combine and sort by timestamp
+            const combined = [...newestItems, ...newestFolders, ...newestFiles];
+            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
+            
+            return combined.slice(0, 5);
         },
 
         validateUrl(value) {
@@ -1850,9 +2593,190 @@ function folderSystem() {
             }
         },
 
-        navigateToRoot() {
-            this.currentPath = [];
-            this.breadcrumb = ['Home'];
+        // Add to the return object in folderSystem()
+        showFilterMenu: false,
+        currentFilter: { value: 'default', label: 'Default' },
+        filterOptions: [
+            { value: 'default', label: 'Default' },
+            { value: 'az', label: 'Name (A to Z)' },
+            { value: 'za', label: 'Name (Z to A)' },
+            { value: 'newest', label: 'Newest First' },
+            { value: 'oldest', label: 'Oldest First' },
+            { value: 'folders', label: 'Folders Only' },
+            { value: 'files', label: 'Files Only' }
+        ],
+
+        // New computed property for sorted items
+        get sortedItems() {
+            let items = this.currentFolderContent.map(item => ({
+                ...item,
+                timestamp: item.timestamp || Date.now()
+            }));
+
+            switch (this.currentFilter.value) {
+                case 'az':
+                    return items.sort((a, b) => a.name.localeCompare(b.name));
+                case 'za':
+                    return items.sort((a, b) => b.name.localeCompare(a.name));
+                case 'newest':
+                    return items.sort((a, b) => b.timestamp - a.timestamp);
+                case 'oldest':
+                    return items.sort((a, b) => a.timestamp - b.timestamp);
+                case 'folders':
+                    return items.filter(item => item.type === 'folder');
+                case 'files':
+                    return items.filter(item => item.type === 'website');
+                default:
+                    return items.sort((a, b) => {
+                        if (a.type === b.type) return a.name.localeCompare(b.name);
+                        return a.type === 'folder' ? -1 : 1;
+                    });
+            }
+        },
+
+        setFilter(filter) {
+            this.currentFilter = filter;
+        },
+
+        isNewItem(item) {
+            // Get all files across all folders in the current path
+            let recentFiles = this.getRecentFiles();
+            
+            if (item.type === 'website') {
+                // For files, directly check if it's in the recent list
+                return recentFiles.some(recent => recent.name === item.name);
+            } else if (item.type === 'folder') {
+                // For folders, check if they contain any recent files
+                return recentFiles.some(recent => 
+                    recent.path.includes(item.name)
+                );
+            }
+            return false;
+        },
+
+        // Add this new method to track recent files
+        getRecentFiles() {
+            let allFiles = [];
+            
+            // Helper function to recursively collect files with their paths
+            const collectFiles = (structure, currentPath = []) => {
+                Object.entries(structure).forEach(([name, data]) => {
+                    if (data.type === 'website') {
+                        allFiles.push({
+                            name: name,
+                            timestamp: data.timestamp || 0,
+                            path: [...currentPath, name].join('/')
+                        });
+                    } else if (data.type === 'folder' && data.content) {
+                        collectFiles(data.content, [...currentPath, name]);
+                    }
+                });
+            };
+            
+            // Start collecting from current folder
+            let current = this.getCurrentFolder();
+            collectFiles(current, this.currentPath);
+            
+            // Sort by timestamp and get 5 most recent
+            return allFiles
+                .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+                .slice(0, 5);
+        },
+
+        // Helper method to get current folder
+        getCurrentFolder() {
+            let current = this.fileSystem;
+            for (let folder of this.currentPath) {
+                current = current[folder].content;
+            }
+            return current;
+        },
+
+        getParentName() {
+            if (this.currentPath.length <= 1) return 'Home';
+            return this.currentPath[this.currentPath.length - 2];
+        },
+
+        getParentContents() {
+            if (this.currentPath.length === 0) return [];
+            
+            // Navigate to parent folder
+            let parent = this.fileSystem;
+            for (let i = 0; i < this.currentPath.length - 1; i++) {
+                if (!parent[this.currentPath[i]]?.content) return [];
+                parent = parent[this.currentPath[i]].content;
+            }
+            
+            // Convert parent folder contents to array with full path info
+            return Object.entries(parent || {}).map(([name, data]) => ({
+                name,
+                type: data.type,
+                url: data.url,
+                items: data.items,
+                path: [...this.currentPath.slice(0, -1), name]
+            }));
+        },
+
+        navigateToParentItem(item) {
+            if (item.type === 'folder') {
+                // If clicking a folder, show its contents
+                let targetPath = [...this.currentPath.slice(0, -1)];
+                if (item.name !== this.currentPath[this.currentPath.length - 1]) {
+                    targetPath.push(item.name);
+                }
+                this.currentPath = targetPath;
+                
+                // Get the folder's contents
+                let folderContents = this.getFolderContents(targetPath);
+                if (Object.keys(folderContents).length > 0) {
+                    // If the folder has contents, display them
+                    this.currentFolderContent = this.formatFolderContents(folderContents);
+                }
+            } else if (item.type === 'website') {
+                this.activePreview = item;
+                this.previewOpen = true;
+            }
+        },
+
+        // Helper method to get current folder's contents
+        getCurrentFolderContents() {
+            let current = this.fileSystem;
+            for (let folder of this.currentPath) {
+                if (!current[folder]?.content) return [];
+                current = current[folder].content;
+            }
+            return current;
+        },
+
+        getFolderContents(path) {
+            let current = this.fileSystem;
+            for (let folder of path) {
+                if (!current[folder]?.content) return {};
+                current = current[folder].content;
+            }
+            return current;
+        },
+
+        formatFolderContents(contents) {
+            return Object.entries(contents).map(([name, data]) => ({
+                name,
+                type: data.type,
+                url: data.url,
+                items: data.items,
+                timestamp: data.timestamp
+            }));
+        },
+
+        // Helper method to check if a folder has child folders
+        hasChildFolders(item) {
+            if (item.type !== 'folder') return false;
+            let contents = this.getFolderContents([...this.currentPath, item.name]);
+            return Object.values(contents).some(child => child.type === 'folder');
+        },
+
+        // Helper method to get folder depth
+        getFolderDepth(path) {
+            return path.length;
         }
     }
 }
