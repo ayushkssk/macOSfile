@@ -79,7 +79,7 @@
         }
 
         .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
+            height: 4px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-track {
@@ -264,7 +264,7 @@
         <div class="fixed top-20 left-20 right-6 z-20 flex items-center space-x-2 px-4 py-2 bg-gray-900/50 backdrop-blur-sm rounded-lg shadow-lg">
             <!-- Home Icon -->
             <a 
-                @click.prevent="currentPath = []; breadcrumb = ['Home'];" 
+                @click.prevent="navigateToRoot()" 
                 href="#" 
                 class="p-2 rounded-lg hover:bg-gray-800/50 text-gray-400 hover:text-white transition-all"
             >
@@ -273,34 +273,29 @@
                 </svg>
             </a>
 
-            <!-- Separator -->
-            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-
             <!-- Directory Path -->
-            <template x-for="(segment, index) in currentPath" :key="index">
-                <div class="flex items-center">
-                    <button 
-                        @click="navigateTo(index)"
-                        class="px-3 py-1.5 rounded-lg hover:bg-gray-800/50 text-gray-400 hover:text-white transition-all text-sm font-medium"
-                        x-text="segment"
-                    ></button>
-                    
-                    <!-- Separator (except for last item) -->
-                    <template x-if="index < currentPath.length - 1">
-                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex items-center space-x-2 overflow-x-auto custom-scrollbar">
+                <template x-for="(segment, index) in currentPath" :key="index">
+                    <div class="flex items-center shrink-0">
+                        <!-- Separator -->
+                        <svg class="w-5 h-5 text-gray-600 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                         </svg>
-                    </template>
-                </div>
-            </template>
-
-            <!-- Current Folder Info -->
-            <div class="ml-auto flex items-center space-x-2 text-sm text-gray-400">
-                <span x-text="`${currentItems.length} items`"></span>
-                <span>•</span>
-                <span x-text="currentSize"></span>
+                        
+                        <!-- Directory Button -->
+                        <button 
+                            @click="navigateTo(index)"
+                            class="px-3 py-1.5 rounded-lg hover:bg-gray-800/50 text-gray-400 hover:text-white transition-all text-sm font-medium whitespace-nowrap"
+                            :class="{'text-white bg-gray-800/50': index === currentPath.length - 1}"
+                        >
+                            <span x-text="segment"></span>
+                            <!-- Optional: Show item count for current directory -->
+                            <template x-if="index === currentPath.length - 1">
+                                <span class="text-xs text-gray-500 ml-2" x-text="`(${currentItems.length})`"></span>
+                            </template>
+                        </button>
+                    </div>
+                </template>
             </div>
         </div>
 
@@ -1399,6 +1394,70 @@ function folderSystem() {
                         }
                     }
                 }
+            },
+            'Github': {
+                type: 'folder',
+                items: 7,
+                content: {
+                    'Personal': {
+                        type: 'folder',
+                        items: 2,
+                        content: {
+                            'Profile': { type: 'website', url: 'https://ayushkssk.github.io/Profile/' },
+                            'portfoliyo': { type: 'website', url: 'https://ayushkssk.github.io/portfoliyo/' }
+                        }
+                    },
+                    'Web Applications': {
+                        type: 'folder',
+                        items: 3,
+                        content: {
+                            'EXPENCE_TRACKER': { type: 'website', url: 'https://ayushkssk.github.io/EXPENCE_TRACKER/' },
+                            'jobapplication': { type: 'website', url: 'https://ayushkssk.github.io/jobapplication/' },
+                            'newfebwebgemini': { type: 'website', url: 'https://ayushkssk.github.io/newfebwebgemini/' }
+                        }
+                    },
+                    'E-Commerce': {
+                        type: 'folder',
+                        items: 2,
+                        content: {
+                            'greenvegetables': { type: 'website', url: 'https://ayushkssk.github.io/greenvegetables/' },
+                            'ebook': { type: 'website', url: 'https://ayushkssk.github.io/ebook/' }
+                        }
+                    },
+                    'Services': {
+                        type: 'folder',
+                        items: 3,
+                        content: {
+                            'Contractor': { type: 'website', url: 'https://ayushkssk.github.io/Contractor/' },
+                            'feminahomeservise': { type: 'website', url: 'https://ayushkssk.github.io/feminahomeservise/' },
+                            'macOSfile': { type: 'website', url: 'https://ayushkssk.github.io/macOSfile/' }
+                        }
+                    },
+                    'Education': {
+                        type: 'folder',
+                        items: 3,
+                        content: {
+                            'HDJainCollege': { type: 'website', url: 'https://ayushkssk.github.io/HDJainCollege/' },
+                            'College': { type: 'website', url: 'https://ayushkssk.github.io/College/' },
+                            'satwik.github.io': { type: 'website', url: 'https://ayushkssk.github.io/satwik.github.io/' }
+                        }
+                    },
+                    'Events': {
+                        type: 'folder',
+                        items: 2,
+                        content: {
+                            'wedding-website': { type: 'website', url: 'https://ayushkssk.github.io/wedding-website/' },
+                            'marrage_celebration': { type: 'website', url: 'https://ayushkssk.github.io/marrage_celebration/' }
+                        }
+                    },
+                    'Other': {
+                        type: 'folder',
+                        items: 1,
+                        content: {
+                            'Vercel App': { type: 'website', url: 'https://1ib91wt5y9ssrncqvztwowuzbrgbjdy5.vercel.app/' }
+                        }
+                    }
+                }
             }
         },
 
@@ -1789,6 +1848,11 @@ function folderSystem() {
             } else if (this.addItemType === 'website') {
                 // Handle website creation
             }
+        },
+
+        navigateToRoot() {
+            this.currentPath = [];
+            this.breadcrumb = ['Home'];
         }
     }
 }
