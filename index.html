@@ -849,6 +849,14 @@
             </div>
         </div>
     </div>
+    
+    <!-- You can easily add more links by adding more objects to the quickLinks array with the same structure:
+    {
+        name: "Link Name",
+        url: "https://github.com/...",
+        type: "website",
+        icon: "https://github.com/favicon.ico"
+    } -->
 
     <!-- Profile Modal -->
     <div 
@@ -1194,6 +1202,25 @@
                 Made with <span class="text-red-500">❤️</span> by IT4B
             </div>
         </a>
+    </div>
+
+    <!-- Quick Links Section -->
+    <div class="flex items-center space-x-2 ml-4">
+        <template x-for="link in quickLinks" :key="link.url">
+            <a 
+                :href="link.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex items-center space-x-1.5 px-2 py-1 text-xs rounded-md bg-gray-800/80 text-gray-300 hover:text-white border border-gray-700/50 backdrop-blur-sm transition-all h-[22px]"
+            >
+                <img 
+                    :src="link.icon" 
+                    class="w-3.5 h-3.5 rounded-sm"
+                    @error="$el.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIiBkPSJNMTAgNkg2YTIgMiAwIDAwLTIgMnYxMGEyIDIgMCAwMDIgMmgxMGEyIDIgMCAwMDItMnYtNE0xNCA0aDZtMCAwdjZtMC02TDEwIDE0Ii8+PC9zdmc+'"
+                >
+                <span x-text="link.name"></span>
+            </a>
+        </template>
     </div>
 </body>
 
@@ -2335,18 +2362,6 @@ function folderSystem() {
             return combined.slice(0, 5);
         },
 
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
         getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
             const newestItems = this.getNewestItemsWithParentFolders();
             const newestFolders = this.getNewestFoldersWithParentFolders();
@@ -2383,31 +2398,7 @@ function folderSystem() {
             return combined.slice(0, 5);
         },
 
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
         getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
             const newestItems = this.getNewestItemsWithParentFolders();
             const newestFolders = this.getNewestFoldersWithParentFolders();
             const newestFiles = this.getNewestFilesWithParentFolders();
@@ -2455,7 +2446,7 @@ function folderSystem() {
             return combined.slice(0, 5);
         },
 
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
             const newestItems = this.getNewestItemsWithParentFolders();
             const newestFolders = this.getNewestFoldersWithParentFolders();
             const newestFiles = this.getNewestFilesWithParentFolders();
@@ -2467,7 +2458,7 @@ function folderSystem() {
             return combined.slice(0, 5);
         },
 
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
             const newestItems = this.getNewestItemsWithParentFolders();
             const newestFolders = this.getNewestFoldersWithParentFolders();
             const newestFiles = this.getNewestFilesWithParentFolders();
@@ -2515,7 +2506,7 @@ function folderSystem() {
             return combined.slice(0, 5);
         },
 
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
+        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
             const newestItems = this.getNewestItemsWithParentFolders();
             const newestFolders = this.getNewestFoldersWithParentFolders();
             const newestFiles = this.getNewestFilesWithParentFolders();
