@@ -241,20 +241,6 @@
         .animate-compact-pulse {
             animation: compact-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
-
-        /* Add this to your existing styles */
-        @keyframes infiniteScroll {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-50%); }
-        }
-
-        .infinite-scroll-container {
-            animation: infiniteScroll 30s linear infinite;
-        }
-
-        .infinite-scroll-container:hover {
-            animation-play-state: paused;
-        }
     </style>
 </head>
 <body class="bg-gray-900 p-8" x-data="folderSystem()">
@@ -773,77 +759,62 @@
                 </div>
             </div>
 
-            <!-- Quick Links Section -->
+            <!-- Quick Links Section (Fixed at bottom) -->
             <div class="flex-shrink-0 bg-gray-900 border-t border-gray-800/50 p-4">
                 <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Quick Links</h3>
                 
-                <!-- Quick Links Scroll Container -->
-                <div 
-                    class="h-32 overflow-hidden relative rounded-lg"
-                    role="region"
-                    aria-label="Quick links scroll area"
-                >
+                <!-- Quick Links Infinite Scroll Container -->
+                <div class="h-32 overflow-hidden relative group">
                     <!-- Gradient Overlays -->
-                    <div class="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-gray-900 via-gray-900/90 to-transparent z-10 pointer-events-none"></div>
-                    <div class="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-gray-900 via-gray-900/90 to-transparent z-10 pointer-events-none"></div>
+                    <div class="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-gray-900 to-transparent z-10"></div>
+                    <div class="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-gray-900 to-transparent z-10"></div>
 
-                    <!-- Scrolling Content -->
                     <div 
-                        x-data="infiniteScroll"
-                        class="infinite-scroll-container"
+                        x-data="infiniteScroll()"
+                        class="space-y-2 transform"
                         @mouseenter="pause"
                         @mouseleave="resume"
-                        @focus="pause"
-                        @blur="resume"
-                        tabindex="0"
-                        role="list"
+                        style="animation: scrolling 20s linear infinite;"
                     >
                         <!-- Original Set -->
-                        <div class="space-y-1.5">
-                            <template x-for="(link, index) in links" :key="link.url">
-                                <a 
-                                    :href="link.url" 
-                                    class="flex items-center p-2 hover:bg-gray-800/50 rounded-lg transition-all group"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    :aria-label="`Visit ${link.name} (opens in new tab)`"
-                                    @focus="pause"
-                                    @blur="resume"
+                        <template x-for="link in links" :key="link.url">
+                            <a 
+                                :href="link.url" 
+                                class="flex items-center p-2 hover:bg-gray-800/50 rounded-lg transition-all group/item"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                <img 
+                                    :src="`https://${link.icon}`" 
+                                    class="w-4 h-4 mr-3"
+                                    :alt="link.name"
+                                    @error="$el.src = 'https://www.google.com/favicon.ico'"
                                 >
-                                    <img 
-                                        :src="`https://${link.icon}`" 
-                                        class="w-4 h-4 mr-3 flex-shrink-0"
-                                        :alt=""
-                                        @error="$el.src = 'https://www.google.com/favicon.ico'"
-                                        aria-hidden="true"
-                                    >
-                                    <span class="text-sm text-gray-400 group-hover:text-white transition-colors truncate">
-                                        <span x-text="link.name"></span>
-                                    </span>
-                                </a>
-                            </template>
-                        </div>
+                                <span class="text-sm text-gray-400 group-hover/item:text-white transition-colors">
+                                    <span x-text="link.name"></span>
+                                </span>
+                            </a>
+                        </template>
 
                         <!-- Duplicate Set for Seamless Loop -->
-                        <div class="space-y-1.5" aria-hidden="true">
-                            <template x-for="link in links" :key="`${link.url}-dup`">
-                                <a 
-                                    :href="link.url" 
-                                    class="flex items-center p-2 hover:bg-gray-800/50 rounded-lg transition-all group"
-                                    tabindex="-1"
+                        <template x-for="link in links" :key="`${link.url}-dup`">
+                            <a 
+                                :href="link.url" 
+                                class="flex items-center p-2 hover:bg-gray-800/50 rounded-lg transition-all group/item"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                <img 
+                                    :src="`https://${link.icon}`" 
+                                    class="w-4 h-4 mr-3"
+                                    :alt="link.name"
+                                    @error="$el.src = 'https://www.google.com/favicon.ico'"
                                 >
-                                    <img 
-                                        :src="`https://${link.icon}`" 
-                                        class="w-4 h-4 mr-3 flex-shrink-0"
-                                        :alt=""
-                                        @error="$el.src = 'https://www.google.com/favicon.ico'"
-                                    >
-                                    <span class="text-sm text-gray-400 group-hover:text-white transition-colors truncate">
-                                        <span x-text="link.name"></span>
-                                    </span>
-                                </a>
-                            </template>
-                        </div>
+                                <span class="text-sm text-gray-400 group-hover/item:text-white transition-colors">
+                                    <span x-text="link.name"></span>
+                                </span>
+                            </a>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -2707,42 +2678,20 @@ function infiniteScroll() {
         ],
         
         pause() {
-            if (this.$el.style.animationPlayState !== 'paused') {
-                this.$el.style.animationPlayState = 'paused';
-            }
+            const element = this.$el;
+            element.style.animationPlayState = 'paused';
         },
         
         resume() {
-            // Only resume if not focused
-            if (!this.$el.matches(':focus-within')) {
-                this.$el.style.animationPlayState = 'running';
-            }
+            const element = this.$el;
+            element.style.animationPlayState = 'running';
         },
 
         init() {
-            // Check for reduced motion preference
-            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            
-            // Adjust animation duration based on content and preferences
-            this.$nextTick(() => {
-                const contentHeight = this.$el.scrollHeight;
-                const baseSpeed = prefersReducedMotion ? 90 : 45;
-                const duration = Math.max(baseSpeed, (contentHeight / 40) * 2);
-                this.$el.style.animationDuration = `${duration}s`;
-            });
-
-            // Handle resize events
-            const resizeObserver = new ResizeObserver(() => {
-                const contentHeight = this.$el.scrollHeight;
-                const baseSpeed = prefersReducedMotion ? 90 : 45;
-                const duration = Math.max(baseSpeed, (contentHeight / 40) * 2);
-                this.$el.style.animationDuration = `${duration}s`;
-            });
-
-            resizeObserver.observe(this.$el);
-
-            // Cleanup
-            this.$cleanup = () => resizeObserver.disconnect();
+            // Start the animation paused if prefers-reduced-motion is enabled
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                this.$el.style.animationPlayState = 'paused';
+            }
         }
     }
 }
