@@ -241,116 +241,126 @@
         .animate-compact-pulse {
             animation: compact-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
+
+        /* Add this to your existing styles */
+        @keyframes infiniteScroll {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-50%); }
+        }
+
+        .infinite-scroll-container {
+            animation: infiniteScroll 30s linear infinite;
+        }
+
+        .infinite-scroll-container:hover {
+            animation-play-state: paused;
+        }
+
+        /* Jarvis Listening Animation */
+        @keyframes jarvisWave {
+            0% {
+                transform: scaleY(0.1);
+                opacity: 0;
+            }
+            50% {
+                transform: scaleY(1);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scaleY(0.1);
+                opacity: 0;
+            }
+        }
+
+        @keyframes dustParticle {
+            0% {
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+            50% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-20px) translateX(var(--particle-x, 0));
+                opacity: 0;
+            }
+        }
+
+        .jarvis-container {
+            position: relative;
+            width: 200px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .jarvis-wave {
+            width: 3px;
+            height: 100%;
+            background: #64B5F6;
+            border-radius: 6px;
+            animation: jarvisWave 1s ease-in-out infinite;
+        }
+
+        .jarvis-wave:nth-child(2) { animation-delay: 0.1s; }
+        .jarvis-wave:nth-child(3) { animation-delay: 0.2s; }
+        .jarvis-wave:nth-child(4) { animation-delay: 0.3s; }
+        .jarvis-wave:nth-child(5) { animation-delay: 0.4s; }
+
+        .dust-particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body class="bg-gray-900 p-8" x-data="folderSystem()">
     <!-- Top Navigation Bar -->
     <div class="flex justify-between items-center mb-6">
         <!-- Breadcrumb Navigation -->
-        <div class="fixed top-20 left-20 right-6 z-20 flex items-center space-x-4 px-4 py-2 bg-gray-900/50 backdrop-blur-sm rounded-lg shadow-lg">
+        <div class="fixed top-20 left-20 right-6 z-20 flex items-center space-x-2 px-4 py-2 bg-gray-900/50 backdrop-blur-sm rounded-lg shadow-lg">
             <!-- Home Icon -->
             <a 
-                @click.prevent="navigateToRoot()"
+                @click.prevent="currentPath = []; breadcrumb = ['Home'];" 
                 href="#" 
                 class="p-2 rounded-lg hover:bg-gray-800/50 text-gray-400 hover:text-white transition-all"
-                :class="{'text-white': currentPath.length === 0}"
             >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
             </a>
 
-            <!-- Directory Path with Parent Folder Preview -->
-            <div class="flex items-center space-x-2 overflow-x-auto custom-scrollbar">
-                <template x-for="(segment, index) in currentPath" :key="index">
-                    <div class="flex items-center">
-                        <!-- Separator -->
-                        <svg class="w-5 h-5 text-gray-600 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- Separator -->
+            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+
+            <!-- Directory Path -->
+            <template x-for="(segment, index) in currentPath" :key="index">
+                <div class="flex items-center">
+                    <button 
+                        @click="navigateTo(index)"
+                        class="px-3 py-1.5 rounded-lg hover:bg-gray-800/50 text-gray-400 hover:text-white transition-all text-sm font-medium"
+                        x-text="segment"
+                    ></button>
+                    
+                    <!-- Separator (except for last item) -->
+                    <template x-if="index < currentPath.length - 1">
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                         </svg>
-                        
-                        <!-- Directory Button -->
-                        <button 
-                            @click="navigateTo(index)"
-                            @mouseover="previewParentFolder(index)"
-                            @mouseleave="clearPreview()"
-                            class="px-3 py-1.5 rounded-lg hover:bg-gray-800/50 text-gray-400 hover:text-white transition-all text-sm font-medium relative group"
-                            :class="{'text-white': index === currentPath.length - 1}"
-                        >
-                            <span x-text="segment"></span>
-                            
-                            <!-- Preview Tooltip -->
-                            <div 
-                                x-show="previewIndex === index && index !== currentPath.length - 1"
-                                class="absolute left-0 top-full mt-2 bg-gray-800/95 backdrop-blur-sm rounded-lg shadow-lg p-2 z-50 w-48"
-                                @click.stop
-                            >
-                                <div class="text-xs text-gray-400 mb-1">Contents:</div>
-                                <div class="max-h-32 overflow-y-auto custom-scrollbar">
-                                    <template x-for="item in getPreviewContent(index)" :key="item.name">
-                                        <div class="flex items-center space-x-2 p-1 text-gray-300">
-                                            <template x-if="item.type === 'folder'">
-                                                <svg class="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                                                </svg>
-                                            </template>
-                                            <template x-if="item.type === 'website'">
-                                                <img :src="getFavicon(item.url)" class="w-3 h-3" />
-                                            </template>
-                                            <span class="text-xs" x-text="item.name"></span>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-                        </button>
-                    </div>
-                </template>
-            </div>
-
-            <!-- Repositioned and Resized Filter Dropdown -->
-            <div class="relative">
-                <button 
-                    @click="showFilterMenu = !showFilterMenu"
-                    class="flex items-center space-x-1.5 px-2.5 py-1 text-xs rounded-md bg-gray-800/80 text-gray-300 hover:text-white border border-gray-700/50 backdrop-blur-sm transition-all"
-                >
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                    </svg>
-                    <span x-text="currentFilter.label"></span>
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-
-                <div 
-                    x-show="showFilterMenu"
-                    @click.away="showFilterMenu = false"
-                    class="absolute left-0 mt-1 w-40 bg-gray-800/95 backdrop-blur-sm border border-gray-700/50 rounded-lg shadow-lg z-50"
-                    x-transition:enter="transition ease-out duration-100"
-                    x-transition:enter-start="transform opacity-0 scale-95"
-                    x-transition:enter-end="transform opacity-100 scale-100"
-                >
-                    <div class="py-1">
-                        <template x-for="filter in filterOptions" :key="filter.value">
-                            <button 
-                                @click="setFilter(filter); showFilterMenu = false"
-                                class="w-full px-3 py-1.5 text-left text-xs hover:bg-gray-700/50 transition-colors flex items-center justify-between"
-                                :class="currentFilter.value === filter.value ? 'text-blue-400' : 'text-gray-300'"
-                            >
-                                <span x-text="filter.label"></span>
-                                <svg 
-                                    x-show="currentFilter.value === filter.value"
-                                    class="w-3 h-3" 
-                                    fill="none" 
-                                    stroke="currentColor" 
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                </svg>
-                            </button>
-                        </template>
-                    </div>
+                    </template>
                 </div>
+            </template>
+
+            <!-- Current Folder Info -->
+            <div class="ml-auto flex items-center space-x-2 text-sm text-gray-400">
+                <span x-text="`${currentItems.length} items`"></span>
+                <span>•</span>
+                <span x-text="currentSize"></span>
             </div>
         </div>
 
@@ -428,52 +438,6 @@
                 </template>
             </div>
         </div>
-    </div>
-
-    <!-- Add this right after the search bar div, before the grid view -->
-    <!-- <div class="fixed top-20 right-6 z-20 flex items-center space-x-4">
-        Filter Dropdown
-        <div class="relative">
-            <button 
-                @click="showFilterMenu = !showFilterMenu"
-                class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-800/80 text-gray-300 hover:text-white border border-gray-700/50 backdrop-blur-sm transition-all"
-            >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                </svg>
-                <span x-text="currentFilter.label"></span>
-            </button>
-
-            <div 
-                x-show="showFilterMenu"
-                @click.away="showFilterMenu = false"
-                class="absolute right-0 mt-2 w-48 bg-gray-800/95 backdrop-blur-sm border border-gray-700/50 rounded-lg shadow-lg z-50"
-                x-transition:enter="transition ease-out duration-100"
-                x-transition:enter-start="transform opacity-0 scale-95"
-                x-transition:enter-end="transform opacity-100 scale-100"
-            >
-                <div class="py-1">
-                    <template x-for="filter in filterOptions" :key="filter.value">
-                        <button 
-                            @click="setFilter(filter); showFilterMenu = false"
-                            class="w-full px-4 py-2 text-left text-sm hover:bg-gray-700/50 transition-colors flex items-center justify-between"
-                            :class="currentFilter.value === filter.value ? 'text-blue-400' : 'text-gray-300'"
-                        >
-                            <span x-text="filter.label"></span>
-                            <svg 
-                                x-show="currentFilter.value === filter.value"
-                                class="w-4 h-4" 
-                                fill="none" 
-                                stroke="currentColor" 
-                                viewBox="0 0 24 24"
-                            >
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                        </button>
-                    </template>
-                </div>
-            </div>
-        </div> -->
     </div>
 
     <!-- Preview Modal -->
@@ -554,23 +518,11 @@
     <!-- Existing Grid View (show only when not on home page) -->
     <div x-show="currentPath.length > 0" class="relative h-[calc(100vh-12rem)] overflow-y-auto custom-scrollbar mt-16">
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 p-4">
-            <template x-for="item in sortedItems" :key="item.name">
-                <div class="flex flex-col items-center relative">
-                    <!-- New Item Indicator -->
-                    <div 
-                        x-show="isNewItem(item)"
-                        class="absolute -top-1 -right-1 z-10"
-                    >
-                        <span class="flex h-3 w-3">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-                        </span>
-                    </div>
-                    
-                    <!-- Item Container -->
+            <template x-for="item in currentFolderContent" :key="item.name">
+                <div class="flex flex-col items-center">
                     <div 
                         @click="openItem(item)"
-                        class="w-24 h-24 rounded-xl flex items-center justify-center hover:bg-blue-500/30 transition cursor-pointer relative group"
+                        class="w-24 h-24 rounded-xl flex items-center justify-center hover:bg-blue-500/30 transition cursor-pointer"
                         :class="item.type === 'folder' ? 'bg-blue-500/20' : 'bg-gray-500/20'"
                     >
                         <!-- Folder Icon -->
@@ -580,7 +532,7 @@
                             </svg>
                         </template>
                         
-                        <!-- Website Icon and Visit Button -->
+                        <!-- Website Icon -->
                         <template x-if="item.type === 'website'">
                             <div class="relative w-12 h-12 flex items-center justify-center">
                                 <img 
@@ -588,23 +540,9 @@
                                     class="w-8 h-8 object-contain rounded"
                                     @error="$el.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIiBkPSJNMjEgMTJhOSA5IDAgMDEtOSA5bTktOWE5IDkgMCAwMC05LTltOSA5SDNtOSA5YTkgOSAwIDAxLTktOW05IDljMS42NTcgMCAzLTQuMDMgMy05cy0xLjM0My05LTMtOW0wIDE4Yy0xLjY1NyAwLTMtNC4wMy0zLTlzMS4zNDMtOSAzLTltLTkgOWE5IDkgMCAwMTktOSIvPjwvc3ZnPg=='"
                                 >
-                                <!-- Visit Button (appears on hover) -->
-                                <a 
-                                    :href="item.url"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    @click.stop
-                                    class="absolute inset-0 flex items-center justify-center bg-black/50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                    </svg>
-                                </a>
                             </div>
                         </template>
                     </div>
-                    
-                    <!-- Item Name and Details -->
                     <div class="mt-2 text-center">
                         <p class="text-white font-medium" x-text="item.name"></p>
                         <p class="text-blue-400 text-sm" x-show="item.type === 'folder'" x-text="`${item.items} items`"></p>
@@ -759,75 +697,82 @@
                 </div>
             </div>
 
-            <!-- Quick Links Section (Fixed at bottom) -->
+            <!-- Quick Links Section -->
             <div class="flex-shrink-0 bg-gray-900 border-t border-gray-800/50 p-4">
                 <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Quick Links</h3>
                 
-                <!-- Quick Links Infinite Scroll Container -->
-                <div class="h-32 overflow-hidden relative group">
+                <!-- Quick Links Scroll Container -->
+                <div 
+                    class="h-32 overflow-hidden relative rounded-lg"
+                    role="region"
+                    aria-label="Quick links scroll area"
+                >
                     <!-- Gradient Overlays -->
-                    <div class="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-gray-900 to-transparent z-10"></div>
-                    <div class="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-gray-900 to-transparent z-10"></div>
+                    <div class="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-gray-900 via-gray-900/90 to-transparent z-10 pointer-events-none"></div>
+                    <div class="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-gray-900 via-gray-900/90 to-transparent z-10 pointer-events-none"></div>
 
+                    <!-- Scrolling Content -->
                     <div 
-                        x-data="infiniteScroll()"
-                        class="space-y-2 transform"
+                        x-data="infiniteScroll"
+                        class="infinite-scroll-container"
                         @mouseenter="pause"
                         @mouseleave="resume"
-                        style="animation: scrolling 20s linear infinite;"
+                        @focus="pause"
+                        @blur="resume"
+                        tabindex="0"
+                        role="list"
                     >
                         <!-- Original Set -->
-                        <template x-for="link in links" :key="link.url">
-                            <a 
-                                :href="link.url" 
-                                class="flex items-center p-2 hover:bg-gray-800/50 rounded-lg transition-all group/item"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                <img 
-                                    :src="`https://${link.icon}`" 
-                                    class="w-4 h-4 mr-3"
-                                    :alt="link.name"
-                                    @error="$el.src = 'https://www.google.com/favicon.ico'"
+                        <div class="space-y-1.5">
+                            <template x-for="(link, index) in links" :key="link.url">
+                                <a 
+                                    :href="link.url" 
+                                    class="flex items-center p-2 hover:bg-gray-800/50 rounded-lg transition-all group"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    :aria-label="`Visit ${link.name} (opens in new tab)`"
+                                    @focus="pause"
+                                    @blur="resume"
                                 >
-                                <span class="text-sm text-gray-400 group-hover/item:text-white transition-colors">
-                                    <span x-text="link.name"></span>
-                                </span>
-                            </a>
-                        </template>
+                                    <img 
+                                        :src="`https://${link.icon}`" 
+                                        class="w-4 h-4 mr-3 flex-shrink-0"
+                                        :alt=""
+                                        @error="$el.src = 'https://www.google.com/favicon.ico'"
+                                        aria-hidden="true"
+                                    >
+                                    <span class="text-sm text-gray-400 group-hover:text-white transition-colors truncate">
+                                        <span x-text="link.name"></span>
+                                    </span>
+                                </a>
+                            </template>
+                        </div>
 
                         <!-- Duplicate Set for Seamless Loop -->
-                        <template x-for="link in links" :key="`${link.url}-dup`">
-                            <a 
-                                :href="link.url" 
-                                class="flex items-center p-2 hover:bg-gray-800/50 rounded-lg transition-all group/item"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                <img 
-                                    :src="`https://${link.icon}`" 
-                                    class="w-4 h-4 mr-3"
-                                    :alt="link.name"
-                                    @error="$el.src = 'https://www.google.com/favicon.ico'"
+                        <div class="space-y-1.5" aria-hidden="true">
+                            <template x-for="link in links" :key="`${link.url}-dup`">
+                                <a 
+                                    :href="link.url" 
+                                    class="flex items-center p-2 hover:bg-gray-800/50 rounded-lg transition-all group"
+                                    tabindex="-1"
                                 >
-                                <span class="text-sm text-gray-400 group-hover/item:text-white transition-colors">
-                                    <span x-text="link.name"></span>
-                                </span>
-                            </a>
-                        </template>
+                                    <img 
+                                        :src="`https://${link.icon}`" 
+                                        class="w-4 h-4 mr-3 flex-shrink-0"
+                                        :alt=""
+                                        @error="$el.src = 'https://www.google.com/favicon.ico'"
+                                    >
+                                    <span class="text-sm text-gray-400 group-hover:text-white transition-colors truncate">
+                                        <span x-text="link.name"></span>
+                                    </span>
+                                </a>
+                            </template>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- You can easily add more links by adding more objects to the quickLinks array with the same structure:
-    {
-        name: "Link Name",
-        url: "https://github.com/...",
-        type: "website",
-        icon: "https://github.com/favicon.ico"
-    } -->
 
     <!-- Profile Modal -->
     <div 
@@ -1113,9 +1058,8 @@
 
     <!-- Confirmation Dialog -->
     <div 
-        x-data="confirmDialog()"
-        x-show="isOpen"
-        @keydown.escape.window="cancel()"
+        x-data="confirmDialog"
+        x-show="show"
         class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
         x-cloak
     >
@@ -1128,17 +1072,15 @@
             
             <div class="flex justify-end space-x-3">
                 <button 
-                    @click="cancel"
+                    @click="cancel()"
                     class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white transition-all"
-                    :disabled="isLoading"
                 >
                     Cancel
                 </button>
                 <button 
-                    @click="confirm"
+                    @click="confirm()"
                     class="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all"
                     x-text="confirmText"
-                    :disabled="isLoading"
                 >
                 </button>
             </div>
@@ -1176,25 +1118,6 @@
                 Made with <span class="text-red-500">❤️</span> by IT4B
             </div>
         </a>
-    </div>
-
-    <!-- Quick Links Section -->
-    <div class="flex items-center space-x-2 ml-4">
-        <template x-for="link in quickLinks" :key="link.url">
-            <a 
-                :href="link.url"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="flex items-center space-x-1.5 px-2 py-1 text-xs rounded-md bg-gray-800/80 text-gray-300 hover:text-white border border-gray-700/50 backdrop-blur-sm transition-all h-[22px]"
-            >
-                <img 
-                    :src="link.icon" 
-                    class="w-3.5 h-3.5 rounded-sm"
-                    @error="$el.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIiBkPSJNMTAgNkg2YTIgMiAwIDAwLTIgMnYxMGEyIDIgMCAwMDIgMmgxMGEyIDIgMCAwMDItMnYtNE0xNCA0aDZtMCAwdjZtMC02TDEwIDE0Ii8+PC9zdmc+'"
-                >
-                <span x-text="link.name"></span>
-            </a>
-        </template>
     </div>
 </body>
 
@@ -1536,82 +1459,6 @@ function folderSystem() {
                         }
                     }
                 }
-            },
-            'Github': {
-                type: 'folder',
-                items: 8, // Increased by 1 for new Portfoliyo folder
-                content: {
-                    'Portfoliyo': {
-                        type: 'folder',
-                        items: 1,
-                        content: {
-                            'CV 2024': { 
-                                type: 'website', 
-                                url: 'https://ayushkssk.github.io/newcv24/',
-                                description: 'Latest Portfolio Website',
-                            },
-                            'Portfoliyo': { type: 'website', url: 'https://ayushkssk.github.io/portfoliyo/' },
-                            'profile': { type: 'website', url: 'https://ayushkssk.github.io/Profile/' },
-                        }
-                    },
-                    'Personal': {
-                        type: 'folder',
-                        items: 2,
-                        content: {
-                            // 'Profile': { type: 'website', url: 'https://ayushkssk.github.io/Profile/' },
-                        }
-                    },
-                    'Web Applications': {
-                        type: 'folder',
-                        items: 3,
-                        content: {
-                            'EXPENCE_TRACKER': { type: 'website', url: 'https://ayushkssk.github.io/EXPENCE_TRACKER/' },
-                            'jobapplication': { type: 'website', url: 'https://ayushkssk.github.io/jobapplication/' },
-                            'newfebwebgemini': { type: 'website', url: 'https://ayushkssk.github.io/newfebwebgemini/' }
-                        }
-                    },
-                    'E-Commerce': {
-                        type: 'folder',
-                        items: 2,
-                        content: {
-                            'greenvegetables': { type: 'website', url: 'https://ayushkssk.github.io/greenvegetables/' },
-                            'ebook': { type: 'website', url: 'https://ayushkssk.github.io/ebook/' }
-                        }
-                    },
-                    'Services': {
-                        type: 'folder',
-                        items: 3,
-                        content: {
-                            'Contractor': { type: 'website', url: 'https://ayushkssk.github.io/Contractor/' },
-                            'feminahomeservise': { type: 'website', url: 'https://ayushkssk.github.io/feminahomeservise/' },
-                            'macOSfile': { type: 'website', url: 'https://ayushkssk.github.io/macOSfile/' }
-                        }
-                    },
-                    'Education': {
-                        type: 'folder',
-                        items: 3,
-                        content: {
-                            'HDJainCollege': { type: 'website', url: 'https://ayushkssk.github.io/HDJainCollege/' },
-                            'College': { type: 'website', url: 'https://ayushkssk.github.io/College/' },
-                            'satwik.github.io': { type: 'website', url: 'https://ayushkssk.github.io/satwik.github.io/' }
-                        }
-                    },
-                    'Events': {
-                        type: 'folder',
-                        items: 2,
-                        content: {
-                            'wedding-website': { type: 'website', url: 'https://ayushkssk.github.io/wedding-website/' },
-                            'marrage_celebration': { type: 'website', url: 'https://ayushkssk.github.io/marrage_celebration/' }
-                        }
-                    },
-                    'Other': {
-                        type: 'folder',
-                        items: 1,
-                        content: {
-                            'Vercel App': { type: 'website', url: 'https://1ib91wt5y9ssrncqvztwowuzbrgbjdy5.vercel.app/' }
-                        }
-                    }
-                }
             }
         },
 
@@ -1620,45 +1467,18 @@ function folderSystem() {
             for (let folder of this.currentPath) {
                 current = current[folder].content;
             }
-            let items = Object.entries(current).map(([name, data]) => ({
+            return Object.entries(current).map(([name, data]) => ({
                 name,
                 type: data.type,
                 url: data.url,
-                items: data.items,
-                timestamp: data.timestamp || Date.now() // Add default timestamp if not present
+                items: data.items
             }));
-
-            // Apply sorting based on current filter
-            switch (this.currentFilter.value) {
-                case 'az':
-                    items.sort((a, b) => a.name.localeCompare(b.name));
-                    break;
-                case 'za':
-                    items.sort((a, b) => b.name.localeCompare(a.name));
-                    break;
-                case 'newest':
-                    items.sort((a, b) => b.timestamp - a.timestamp);
-                    break;
-                case 'oldest':
-                    items.sort((a, b) => a.timestamp - b.timestamp);
-                    break;
-                default:
-                    // Default sorting: folders first, then files alphabetically
-                    items.sort((a, b) => {
-                        if (a.type === b.type) {
-                            return a.name.localeCompare(b.name);
-                        }
-                        return a.type === 'folder' ? -1 : 1;
-                    });
-            }
-
-            return items;
         },
 
         openItem(item) {
             if (item.type === 'folder') {
-                // Navigate into the folder by adding it to the current path
                 this.currentPath.push(item.name);
+                this.breadcrumb.push(item.name);
             } else if (item.type === 'website') {
                 this.activePreview = item;
                 this.previewOpen = true;
@@ -1784,8 +1604,7 @@ function folderSystem() {
                 const domain = new URL(url).hostname;
                 return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
             } catch {
-                // Fallback icon for invalid URLs
-                return 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIiBkPSJNMjEgMTJhOSA5IDAgMDEtOSA5bTktOWE5IDkgMCAwMC05LTltOSA5SDNtOSA5YTkgOSAwIDAxLTktOW05IDljMS42NTcgMCAzLTQuMDMgMy05cy0xLjM0My05LTMtOW0wIDE4Yy0xLjY1NyAwLTMtNC4wMy0zLTlzMS4zNDMtOSAzLTltLTkgOWE5IDkgMCAwMTktOSIvPjwvc3ZnPg==';
+                return null;
             }
         },
 
@@ -1896,8 +1715,7 @@ function folderSystem() {
             currentFolder[folderName] = {
                 type: 'folder',
                 content: {},
-                items: 0,
-                timestamp: Date.now() // Add timestamp
+                items: 0
             };
 
             // Update counts
@@ -1922,8 +1740,7 @@ function folderSystem() {
             // Add new website
             currentFolder[name] = {
                 type: 'website',
-                url: url.startsWith('http') ? url : `https://${url}`,
-                timestamp: Date.now() // Add timestamp
+                url: url.startsWith('http') ? url : `https://${url}`
             };
 
             // Update counts
@@ -1972,476 +1789,33 @@ function folderSystem() {
             this.urlError = '';
         },
 
-        previewIndex: null,
-
-        navigateToRoot() {
-            this.currentPath = [];
-            this.clearPreview();
-        },
-
-        navigateTo(index) {
-            this.currentPath = this.currentPath.slice(0, index + 1);
-            this.clearPreview();
-        },
-
-        previewParentFolder(index) {
-            this.previewIndex = index;
-        },
-
-        clearPreview() {
-            this.previewIndex = null;
-        },
-
-        getPreviewContent(index) {
-            let current = this.fileSystem;
-            // Navigate to the folder at the specified index
-            for (let i = 0; i <= index; i++) {
-                current = current[this.currentPath[i]]?.content;
-                if (!current) return [];
+        validateName(value) {
+            this.nameError = '';
+            if (!value.trim()) {
+                this.nameError = 'Name is required';
+                return false;
+            }
+            if (value.length < 2) {
+                this.nameError = 'Name must be at least 2 characters';
+                return false;
+            }
+            if (value.length > 50) {
+                this.nameError = 'Name must be less than 50 characters';
+                return false;
+            }
+            if (!/^[a-zA-Z0-9-_ ]+$/.test(value)) {
+                this.nameError = 'Name can only contain letters, numbers, spaces, hyphens, and underscores';
+                return false;
             }
             
-            // Convert folder contents to array format
-            return Object.entries(current).map(([name, data]) => ({
-                name,
-                type: data.type,
-                url: data.url,
-                items: data.items
-            }));
-        },
-
-        currentFilter: {
-            label: 'Default',
-            value: 'default'
-        },
-
-        filterOptions: [
-            { label: 'Default', value: 'default' },
-            { label: 'Name (A to Z)', value: 'az' },
-            { label: 'Name (Z to A)', value: 'za' },
-            { label: 'Newest First', value: 'newest' },
-            { label: 'Oldest First', value: 'oldest' },
-            { label: 'Folders Only', value: 'folders' },
-            { label: 'Files Only', value: 'files' }
-        ],
-
-        isFilterOpen: false,
-
-        toggleFilter() {
-            this.isFilterOpen = !this.isFilterOpen;
-        },
-
-        selectFilter(filter) {
-            this.currentFilter = filter;
-            this.isFilterOpen = false;
-        },
-
-        getNewIndicator(item) {
-            const now = Date.now();
-            const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000;
-            const isNew = item.timestamp >= twentyFourHoursAgo;
-            
-            if (item.type === 'folder') {
-                // Check if any child items are new
-                const childItems = Object.values(item.content || {});
-                const hasNewChild = childItems.some(child => this.getNewIndicator(child));
-                return hasNewChild;
-            } else if (item.type === 'website') {
-                return isNew;
+            // Check for duplicates
+            let currentFolder = this.getCurrentFolder();
+            if (currentFolder[value]) {
+                this.nameError = 'An item with this name already exists';
+                return false;
             }
-        },
-
-        getNewestItems() {
-            let items = [];
-            const now = Date.now();
-            const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000;
             
-            const traverse = (structure, path = '') => {
-                Object.entries(structure).forEach(([name, data]) => {
-                    const currentPath = path ? `${path} / ${name}` : name;
-                    
-                    if (data.type === 'website' && data.timestamp >= twentyFourHoursAgo) {
-                        items.push({
-                            name,
-                            type: data.type,
-                            path: currentPath,
-                            data: data,
-                            url: data.url
-                        });
-                    } else if (data.type === 'folder' && data.content) {
-                        traverse(data.content, currentPath);
-                    }
-                });
-            };
-            
-            traverse(this.fileSystem);
-            
-            // Sort by timestamp and limit to 5 newest items
-            items.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            return items.slice(0, 5);
-        },
-
-        getNewestFolders() {
-            let folders = [];
-            const now = Date.now();
-            const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000;
-            
-            const traverse = (structure, path = '') => {
-                Object.entries(structure).forEach(([name, data]) => {
-                    const currentPath = path ? `${path} / ${name}` : name;
-                    
-                    if (data.type === 'folder' && data.timestamp >= twentyFourHoursAgo) {
-                        folders.push({
-                            name,
-                            type: data.type,
-                            path: currentPath,
-                            data: data
-                        });
-                    }
-                    
-                    if (data.type === 'folder' && data.content) {
-                        traverse(data.content, currentPath);
-                    }
-                });
-            };
-            
-            traverse(this.fileSystem);
-            
-            // Sort by timestamp and limit to 5 newest folders
-            folders.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            return folders.slice(0, 5);
-        },
-
-        getNewestFiles() {
-            let files = [];
-            const now = Date.now();
-            const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000;
-            
-            const traverse = (structure, path = '') => {
-                Object.entries(structure).forEach(([name, data]) => {
-                    const currentPath = path ? `${path} / ${name}` : name;
-                    
-                    if (data.type === 'website' && data.timestamp >= twentyFourHoursAgo) {
-                        files.push({
-                            name,
-                            type: data.type,
-                            path: currentPath,
-                            data: data,
-                            url: data.url
-                        });
-                    } else if (data.type === 'folder' && data.content) {
-                        traverse(data.content, currentPath);
-                    }
-                });
-            };
-            
-            traverse(this.fileSystem);
-            
-            // Sort by timestamp and limit to 5 newest files
-            files.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            return files.slice(0, 5);
-        },
-
-        getNewestItemsWithFolders() {
-            const newestFolders = this.getNewestFolders();
-            const newestFiles = this.getNewestFiles();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFolders() {
-            const newestItems = this.getNewestItems();
-            
-            // Add parent folders to the path
-            const itemsWithParentFolders = newestItems.map(item => {
-                const pathParts = item.path.split(' / ');
-                const parentFolders = pathParts.slice(0, -1);
-                const parentPath = parentFolders.join(' / ');
-                
-                return {
-                    ...item,
-                    parentPath
-                };
-            });
-            
-            return itemsWithParentFolders;
-        },
-
-        getNewestFoldersWithParentFolders() {
-            const newestFolders = this.getNewestFolders();
-            
-            // Add parent folders to the path
-            const foldersWithParentFolders = newestFolders.map(folder => {
-                const pathParts = folder.path.split(' / ');
-                const parentFolders = pathParts.slice(0, -1);
-                const parentPath = parentFolders.join(' / ');
-                
-                return {
-                    ...folder,
-                    parentPath
-                };
-            });
-            
-            return foldersWithParentFolders;
-        },
-
-        getNewestFilesWithParentFolders() {
-            const newestFiles = this.getNewestFiles();
-            
-            // Add parent folders to the path
-            const filesWithParentFolders = newestFiles.map(file => {
-                const pathParts = file.path.split(' / ');
-                const parentFolders = pathParts.slice(0, -1);
-                const parentPath = parentFolders.join(' / ');
-                
-                return {
-                    ...file,
-                    parentPath
-                };
-            });
-            
-            return filesWithParentFolders;
-        },
-
-        getNewestItemsWithParentFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFiles() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFiles() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFiles() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFiles() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
-        },
-
-        getNewestItemsWithParentFoldersAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFilesAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFoldersAndFolders() {
-            const newestItems = this.getNewestItemsWithParentFolders();
-            const newestFolders = this.getNewestFoldersWithParentFolders();
-            const newestFiles = this.getNewestFilesWithParentFolders();
-            
-            // Combine and sort by timestamp
-            const combined = [...newestItems, ...newestFolders, ...newestFiles];
-            combined.sort((a, b) => b.data.timestamp - a.data.timestamp);
-            
-            return combined.slice(0, 5);
+            return true;
         },
 
         validateUrl(value) {
@@ -2475,192 +1849,6 @@ function folderSystem() {
             } else if (this.addItemType === 'website') {
                 // Handle website creation
             }
-        },
-
-        // Add to the return object in folderSystem()
-        showFilterMenu: false,
-        currentFilter: { value: 'default', label: 'Default' },
-        filterOptions: [
-            { value: 'default', label: 'Default' },
-            { value: 'az', label: 'Name (A to Z)' },
-            { value: 'za', label: 'Name (Z to A)' },
-            { value: 'newest', label: 'Newest First' },
-            { value: 'oldest', label: 'Oldest First' },
-            { value: 'folders', label: 'Folders Only' },
-            { value: 'files', label: 'Files Only' }
-        ],
-
-        // New computed property for sorted items
-        get sortedItems() {
-            let items = this.currentFolderContent.map(item => ({
-                ...item,
-                timestamp: item.timestamp || Date.now()
-            }));
-
-            switch (this.currentFilter.value) {
-                case 'az':
-                    return items.sort((a, b) => a.name.localeCompare(b.name));
-                case 'za':
-                    return items.sort((a, b) => b.name.localeCompare(a.name));
-                case 'newest':
-                    return items.sort((a, b) => b.timestamp - a.timestamp);
-                case 'oldest':
-                    return items.sort((a, b) => a.timestamp - b.timestamp);
-                case 'folders':
-                    return items.filter(item => item.type === 'folder');
-                case 'files':
-                    return items.filter(item => item.type === 'website');
-                default:
-                    return items.sort((a, b) => {
-                        if (a.type === b.type) return a.name.localeCompare(b.name);
-                        return a.type === 'folder' ? -1 : 1;
-                    });
-            }
-        },
-
-        setFilter(filter) {
-            this.currentFilter = filter;
-        },
-
-        isNewItem(item) {
-            // Get all files across all folders in the current path
-            let recentFiles = this.getRecentFiles();
-            
-            if (item.type === 'website') {
-                // For files, directly check if it's in the recent list
-                return recentFiles.some(recent => recent.name === item.name);
-            } else if (item.type === 'folder') {
-                // For folders, check if they contain any recent files
-                return recentFiles.some(recent => 
-                    recent.path.includes(item.name)
-                );
-            }
-            return false;
-        },
-
-        // Add this new method to track recent files
-        getRecentFiles() {
-            let allFiles = [];
-            
-            // Helper function to recursively collect files with their paths
-            const collectFiles = (structure, currentPath = []) => {
-                Object.entries(structure).forEach(([name, data]) => {
-                    if (data.type === 'website') {
-                        allFiles.push({
-                            name: name,
-                            timestamp: data.timestamp || 0,
-                            path: [...currentPath, name].join('/')
-                        });
-                    } else if (data.type === 'folder' && data.content) {
-                        collectFiles(data.content, [...currentPath, name]);
-                    }
-                });
-            };
-            
-            // Start collecting from current folder
-            let current = this.getCurrentFolder();
-            collectFiles(current, this.currentPath);
-            
-            // Sort by timestamp and get 5 most recent
-            return allFiles
-                .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
-                .slice(0, 5);
-        },
-
-        // Helper method to get current folder
-        getCurrentFolder() {
-            let current = this.fileSystem;
-            for (let folder of this.currentPath) {
-                current = current[folder].content;
-            }
-            return current;
-        },
-
-        getParentName() {
-            if (this.currentPath.length <= 1) return 'Home';
-            return this.currentPath[this.currentPath.length - 2];
-        },
-
-        getParentContents() {
-            if (this.currentPath.length === 0) return [];
-            
-            // Navigate to parent folder
-            let parent = this.fileSystem;
-            for (let i = 0; i < this.currentPath.length - 1; i++) {
-                if (!parent[this.currentPath[i]]?.content) return [];
-                parent = parent[this.currentPath[i]].content;
-            }
-            
-            // Convert parent folder contents to array with full path info
-            return Object.entries(parent || {}).map(([name, data]) => ({
-                name,
-                type: data.type,
-                url: data.url,
-                items: data.items,
-                path: [...this.currentPath.slice(0, -1), name]
-            }));
-        },
-
-        navigateToParentItem(item) {
-            if (item.type === 'folder') {
-                // If clicking a folder, show its contents
-                let targetPath = [...this.currentPath.slice(0, -1)];
-                if (item.name !== this.currentPath[this.currentPath.length - 1]) {
-                    targetPath.push(item.name);
-                }
-                this.currentPath = targetPath;
-                
-                // Get the folder's contents
-                let folderContents = this.getFolderContents(targetPath);
-                if (Object.keys(folderContents).length > 0) {
-                    // If the folder has contents, display them
-                    this.currentFolderContent = this.formatFolderContents(folderContents);
-                }
-            } else if (item.type === 'website') {
-                this.activePreview = item;
-                this.previewOpen = true;
-            }
-        },
-
-        // Helper method to get current folder's contents
-        getCurrentFolderContents() {
-            let current = this.fileSystem;
-            for (let folder of this.currentPath) {
-                if (!current[folder]?.content) return [];
-                current = current[folder].content;
-            }
-            return current;
-        },
-
-        getFolderContents(path) {
-            let current = this.fileSystem;
-            for (let folder of path) {
-                if (!current[folder]?.content) return {};
-                current = current[folder].content;
-            }
-            return current;
-        },
-
-        formatFolderContents(contents) {
-            return Object.entries(contents).map(([name, data]) => ({
-                name,
-                type: data.type,
-                url: data.url,
-                items: data.items,
-                timestamp: data.timestamp
-            }));
-        },
-
-        // Helper method to check if a folder has child folders
-        hasChildFolders(item) {
-            if (item.type !== 'folder') return false;
-            let contents = this.getFolderContents([...this.currentPath, item.name]);
-            return Object.values(contents).some(child => child.type === 'folder');
-        },
-
-        // Helper method to get folder depth
-        getFolderDepth(path) {
-            return path.length;
         }
     }
 }
@@ -2678,20 +1866,42 @@ function infiniteScroll() {
         ],
         
         pause() {
-            const element = this.$el;
-            element.style.animationPlayState = 'paused';
+            if (this.$el.style.animationPlayState !== 'paused') {
+                this.$el.style.animationPlayState = 'paused';
+            }
         },
         
         resume() {
-            const element = this.$el;
-            element.style.animationPlayState = 'running';
+            // Only resume if not focused
+            if (!this.$el.matches(':focus-within')) {
+                this.$el.style.animationPlayState = 'running';
+            }
         },
 
         init() {
-            // Start the animation paused if prefers-reduced-motion is enabled
-            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                this.$el.style.animationPlayState = 'paused';
-            }
+            // Check for reduced motion preference
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            
+            // Adjust animation duration based on content and preferences
+            this.$nextTick(() => {
+                const contentHeight = this.$el.scrollHeight;
+                const baseSpeed = prefersReducedMotion ? 90 : 45;
+                const duration = Math.max(baseSpeed, (contentHeight / 40) * 2);
+                this.$el.style.animationDuration = `${duration}s`;
+            });
+
+            // Handle resize events
+            const resizeObserver = new ResizeObserver(() => {
+                const contentHeight = this.$el.scrollHeight;
+                const baseSpeed = prefersReducedMotion ? 90 : 45;
+                const duration = Math.max(baseSpeed, (contentHeight / 40) * 2);
+                this.$el.style.animationDuration = `${duration}s`;
+            });
+
+            resizeObserver.observe(this.$el);
+
+            // Cleanup
+            this.$cleanup = () => resizeObserver.disconnect();
         }
     }
 }
