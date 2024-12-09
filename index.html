@@ -810,7 +810,18 @@
         </a>
     </div>
 </body>
-
+<div id="context-menu" class="context-menu" style="display: none;">
+    <div class="context-menu-item" onclick="createNewFolder()">
+        New Folder
+    </div>
+    <div class="context-menu-separator"></div>
+    <div class="context-menu-item" onclick="filterItems()">
+        Filter
+    </div>
+    <div class="context-menu-item" onclick="deleteFolder()">
+        Delete
+    </div>
+</div>
 <script>
 function folderSystem() {
     return {
